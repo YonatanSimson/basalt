@@ -41,6 +41,13 @@ The installer places binaries in `~/.local/bin`, libraries in `~/.local/lib`, an
 
 ### Source installation (CMake presets + vcpkg)
 Clone the source code with the `thirdparty/vcpkg` submodule, then build with CMake presets. Install CMake (>= 3.24), Ninja, and a C++ compiler first.
+
+On Ubuntu, install the required system dependencies before building:
+```
+sudo apt install build-essential ninja-build libglu1-mesa-dev libudev-dev \
+    autoconf autoconf-archive automake libtool
+```
+
 ```
 git clone --recursive https://gitlab.com/VladyslavUsenko/basalt.git
 cd basalt
@@ -63,6 +70,15 @@ On macOS, build the release preset and then package the release artifact:
 cmake --preset release
 cmake --build --preset release -j8
 ./scripts/package_macos_release.sh <tag>
+```
+
+## Generating an AprilGrid calibration target
+To generate an AprilGrid PDF (requires [Kalibr](https://github.com/ethz-asl/kalibr)):
+```
+sudo apt install texlive
+pip install pyx
+python3 <kalibr>/aslam_offline_calibration/kalibr/python/kalibr_create_target_pdf \
+    --type apriltag --nx 6 --ny 6 --tsize 0.088 --tspace 0.3 aprilgrid_6x6_36h11
 ```
 
 ## Usage
