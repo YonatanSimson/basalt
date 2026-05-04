@@ -105,7 +105,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "App
     add_definitions(-DTBB_USE_GLIBCXX_VERSION=${TBB_USE_GLIBCXX_VERSION})
   endif()
 else()
-  set(BASALT_CXX_FLAGS "${BASALT_CXX_FLAGS} -Wno-error=maybe-uninitialized -Wno-error=implicit-fallthrough -Wno-error=deprecated-declarations")
+  set(BASALT_CXX_FLAGS "${BASALT_CXX_FLAGS} -Wno-error=maybe-uninitialized -Wno-error=implicit-fallthrough -Wno-error=deprecated-declarations -Wno-error=unused-variable")
 
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
     set(BASALT_CXX_FLAGS "${BASALT_CXX_FLAGS} -Wno-error=uninitialized")
@@ -428,9 +428,13 @@ if(realsense2_FOUND)
   # librealsense-file and rosbag both provide overlapping rosbag symbols.
   # Keep this relaxation local to the two T265 tools.
   if(UNIX AND NOT APPLE)
+    # libusb-1.0.a (inside realsense2::usb) references udev symbols. libudev must come after
+    # libusb in the link order, but CMake deduplication hoists any explicit libudev reference
+    # before the transitive realsense2::usb expansion. Patching realsense2::usb's
+    # INTERFACE_LINK_LIBRARIES makes libudev expand inline right after libusb-1.0.a, with no
+    # earlier duplicate to get deduped against.
     find_library(UDEV_LIB udev REQUIRED)
-    target_link_libraries(basalt_rs_t265_record "${UDEV_LIB}")
-    target_link_libraries(basalt_rs_t265_vio "${UDEV_LIB}")
+    set_property(TARGET realsense2::usb APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${UDEV_LIB}")
     target_link_options(basalt_rs_t265_record PRIVATE "LINKER:--allow-multiple-definition")
     target_link_options(basalt_rs_t265_vio PRIVATE "LINKER:--allow-multiple-definition")
   elseif(APPLE)
