@@ -408,6 +408,9 @@ basalt_add_macos_runtime_paths(basalt_time_alignment)
 add_executable(basalt_detect_aprilgrid src/detect_aprilgrid.cpp)
 target_link_libraries(basalt_detect_aprilgrid apriltag basalt::basalt-headers ${OpenCV_LIBS})
 
+add_executable(basalt_dump_corners src/dump_corners.cpp)
+target_link_libraries(basalt_dump_corners basalt cereal::cereal)
+
 add_executable(basalt_kitti_eval src/kitti_eval.cpp)
 target_link_libraries(basalt_kitti_eval basalt::basalt-headers basalt::cli11)
 basalt_add_static_link_options(basalt_kitti_eval)
