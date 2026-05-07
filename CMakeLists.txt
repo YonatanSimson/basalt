@@ -169,7 +169,7 @@ set(CMAKE_CXX_FLAGS "${BASALT_CXX_FLAGS} ${BASALT_MARCH_FLAGS} ${BASALT_PASSED_C
 
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(TBB CONFIG REQUIRED)
-find_package(OpenCV CONFIG REQUIRED COMPONENTS core imgproc calib3d features2d imgcodecs)
+find_package(OpenCV CONFIG REQUIRED COMPONENTS core imgproc calib3d features2d imgcodecs videoio)
 file(GLOB BASALT_VCPKG_BOOST_CONFIG "${CMAKE_BINARY_DIR}/vcpkg_installed/*/share/boost/BoostConfig.cmake")
 if(BASALT_VCPKG_BOOST_CONFIG)
   list(GET BASALT_VCPKG_BOOST_CONFIG 0 BASALT_VCPKG_BOOST_CONFIG)
@@ -271,6 +271,7 @@ target_sources(basalt
     ${CMAKE_CURRENT_SOURCE_DIR}/include/basalt/io/dataset_io.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/basalt/io/dataset_io_euroc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/basalt/io/dataset_io_kitti.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/basalt/io/dataset_io_mp4.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/basalt/io/dataset_io_rosbag.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/basalt/io/dataset_io_uzh.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/basalt/io/marg_data_io.h
@@ -407,6 +408,11 @@ basalt_add_macos_runtime_paths(basalt_time_alignment)
 
 add_executable(basalt_detect_aprilgrid src/detect_aprilgrid.cpp)
 target_link_libraries(basalt_detect_aprilgrid apriltag basalt::basalt-headers ${OpenCV_LIBS})
+
+# add_executable(basalt_generate_aprilgrid src/generate_aprilgrid.cpp)
+# target_include_directories(basalt_generate_aprilgrid PRIVATE
+#    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/apriltag/ethz_apriltag2/include)
+# target_link_libraries(basalt_generate_aprilgrid apriltag basalt::basalt-headers ${OpenCV_LIBS})
 
 add_executable(basalt_dump_corners src/dump_corners.cpp)
 target_link_libraries(basalt_dump_corners basalt cereal::cereal)

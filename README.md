@@ -45,8 +45,10 @@ Clone the source code with the `thirdparty/vcpkg` submodule, then build with CMa
 On Ubuntu, install the required system dependencies before building:
 ```
 sudo apt install build-essential ninja-build libglu1-mesa-dev libudev-dev \
-    autoconf autoconf-archive automake libtool
+    autoconf autoconf-archive automake libtool nasm
 ```
+`nasm` is required so vcpkg can build FFmpeg (used by OpenCV's `videoio` for MP4
+ingestion).
 
 ```
 git clone --recursive https://gitlab.com/VladyslavUsenko/basalt.git

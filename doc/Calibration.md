@@ -19,7 +19,7 @@ basalt_calibrate --dataset-path ~/tumvi_calib_data/dataset-calib-cam3_512_16.bag
 ```
 The command line options have the following meaning:
 * `--dataset-path` path to the dataset.
-* `--dataset-type` type of the datset. Currently only `bag` and `euroc` formats of the datasets are supported.
+* `--dataset-type` type of the dataset. Supported values: `bag`, `euroc`, `uzh`, `kitti`, `mp4`. The `mp4` type ingests video files directly via FFmpeg — point `--dataset-path` either at a single video file (mono) or at a directory containing `cam0.<ext>`, `cam1.<ext>`, ... for a multi-cam rig (cam indices must be contiguous from 0). FFmpeg-readable containers are accepted: `.mp4`, `.mov`, `.mkv`, `.avi`, `.webm`, `.m4v`. Per-frame timestamps are derived from each file's reported FPS (no 30 / 60 fps assumption). For VIO/IMU calibration, drop an EuRoC-format `imu.csv` (`ts_ns,wx,wy,wz,ax,ay,az`) next to the videos.
 * `--result-path` path to the folder where the resulting calibration and intermediate results will be stored.
 * `--aprilgrid` path to the configuration file for the aprilgrid.
 * `--cam-types` camera models for the image streams in the dataset. For more details see [arXiv:1807.08957](https://arxiv.org/abs/1807.08957).
