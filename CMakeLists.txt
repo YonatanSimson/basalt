@@ -368,6 +368,7 @@ if(BASALT_BUILD_PYTHON_BINDINGS)
   target_link_libraries(basalt_pybind PRIVATE basalt opengv)
   target_compile_definitions(basalt_pybind PRIVATE ${BASALT_COMPILE_DEFINITIONS})
   set_target_properties(basalt_pybind PROPERTIES
+    OUTPUT_NAME basalt
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/python
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/python)
 endif()

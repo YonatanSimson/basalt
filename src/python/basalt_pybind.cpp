@@ -216,7 +216,7 @@ py::dict estimate_pose_ransac(
 
 }  // namespace
 
-PYBIND11_MODULE(basalt_pybind, m) {
+PYBIND11_MODULE(basalt, m) {
   m.doc() = "Basalt camera-model projection utilities and absolute pose init";
 
   m.def(

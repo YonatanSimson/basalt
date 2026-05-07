@@ -53,7 +53,7 @@ gtest_add_tests(TARGET test_dataset_io_mp4 AUTO)
 if(BASALT_BUILD_PYTHON_BINDINGS)
     add_test(
         NAME test_basalt_pybind_python
-        COMMAND python -m pytest ${CMAKE_SOURCE_DIR}/test/python/test_basalt_pybind.py -q)
+        COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_SOURCE_DIR}/test/python/test_basalt_pybind.py -q)
     set_tests_properties(test_basalt_pybind_python PROPERTIES
         ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/python")
 endif()

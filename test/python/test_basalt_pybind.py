@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-import basalt_pybind
+import basalt
 
 
 def _axis_angle_to_rot(axis: np.ndarray, angle: float) -> np.ndarray:
@@ -30,8 +30,8 @@ def test_ds_project_unproject_direction_consistency() -> None:
     pts = rng.normal(size=(2000, 3))
     pts[:, 2] = rng.uniform(0.6, 3.0, size=pts.shape[0])
 
-    uv, valid_proj = basalt_pybind.project_points("ds", K, pts)
-    rays, valid_unproj = basalt_pybind.unproject_points("ds", K, uv)
+    uv, valid_proj = basalt.project_points("ds", K, pts)
+    rays, valid_unproj = basalt.unproject_points("ds", K, uv)
 
     valid = valid_proj & valid_unproj
     assert int(valid.sum()) > 1000
@@ -57,12 +57,12 @@ def test_ds_pose_estimation_ransac_succeeds() -> None:
     t_gt = np.array([0.03, -0.02, 1.4], dtype=np.float64)
 
     pts_cam = (R_gt @ pts_target.T).T + t_gt
-    uv, valid = basalt_pybind.project_points("ds", K, pts_cam)
+    uv, valid = basalt.project_points("ds", K, pts_cam)
 
     pts = pts_target[valid]
     uv = uv[valid]
 
-    pose = basalt_pybind.estimate_pose_ransac("ds", K, pts, uv)
+    pose = basalt.estimate_pose_ransac("ds", K, pts, uv)
     assert pose["success"]
     assert pose["num_inliers"] >= 20
 
