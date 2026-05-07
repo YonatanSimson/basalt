@@ -47,6 +47,8 @@ int main(int argc, char** argv) {
   std::string cache_dataset_name = "calib-cam-imu";
   int skip_images = 1;
   bool no_gui = false;
+  bool opt_cam_time_offset = true;
+  bool opt_imu_scale = true;
 
   double accel_noise_std = 0.016;
   double gyro_noise_std = 0.000282;
@@ -79,6 +81,11 @@ int main(int argc, char** argv) {
 
   app.add_option("--skip-images", skip_images, "Number of images to skip");
   app.add_flag("--no-gui", no_gui, "Run calibration without opening the GUI");
+  app.add_flag("--opt-cam-time-offset,!--no-opt-cam-time-offset",
+               opt_cam_time_offset,
+               "Optimize camera time offset in phase 2 (default: true)");
+  app.add_flag("--opt-imu-scale,!--no-opt-imu-scale", opt_imu_scale,
+               "Optimize IMU axis scale in phase 2 (default: true)");
 
   try {
     app.parse(argc, argv);
@@ -100,8 +107,8 @@ int main(int argc, char** argv) {
     cv.initOptimization();
     while (!cv.optimizeWithParam(true)) {
     }
-    cv.setOptCamTimeOffset(true);
-    cv.setOptImuScale(true);
+    cv.setOptCamTimeOffset(opt_cam_time_offset);
+    cv.setOptImuScale(opt_imu_scale);
     while (!cv.optimizeWithParam(true)) {
     }
     cv.initMocap();
@@ -113,6 +120,8 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  cv.setOptCamTimeOffset(opt_cam_time_offset);
+  cv.setOptImuScale(opt_imu_scale);
   cv.renderingLoop();
 
   return 0;

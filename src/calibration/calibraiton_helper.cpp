@@ -37,6 +37,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <basalt/utils/apriltag.h>
 
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <cstdio>
+
 #include <tbb/parallel_for.h>
 
 #include <opengv/absolute_pose/CentralAbsoluteAdapter.hpp>
@@ -112,8 +117,26 @@ void CalibHelper::detectCorners(const VioDatasetPtr& vio_data,
   calib_corners.clear();
   calib_corners_rejected.clear();
 
+  const size_t total = vio_data->get_image_timestamps().size();
+  std::atomic<size_t> done{0};
+
+  const auto t_start = std::chrono::steady_clock::now();
+
+  auto fmt_hms = [](double secs, char* buf, size_t n) {
+    if (!std::isfinite(secs) || secs < 0) secs = 0;
+    if (secs > 359999) secs = 359999;  // cap at 99:59:59
+    int s = static_cast<int>(secs + 0.5);
+    int h = s / 3600;
+    int m = (s % 3600) / 60;
+    int sec = s % 60;
+    if (h > 0)
+      std::snprintf(buf, n, "%02d:%02d:%02d", h, m, sec);
+    else
+      std::snprintf(buf, n, "%02d:%02d", m, sec);
+  };
+
   tbb::parallel_for(
-      tbb::blocked_range<size_t>(0, vio_data->get_image_timestamps().size()),
+      tbb::blocked_range<size_t>(0, total),
       [&](const tbb::blocked_range<size_t>& r) {
         const int numTags = april_grid.getTagCols() * april_grid.getTagRows();
         ApriltagDetector ad(numTags);
@@ -131,22 +154,35 @@ void CalibHelper::detectCorners(const VioDatasetPtr& vio_data,
                             ccd_good.corner_ids, ccd_good.radii,
                             ccd_bad.corners, ccd_bad.corner_ids, ccd_bad.radii);
 
-              //                std::cout << "image (" << timestamp_ns << ","
-              //                << i
-              //                          << ")  detected " <<
-              //                          ccd_good.corners.size()
-              //                          << "corners (" <<
-              //                          ccd_bad.corners.size()
-              //                          << " rejected)" << std::endl;
-
               TimeCamId tcid(timestamp_ns, i);
 
               calib_corners.emplace(tcid, ccd_good);
               calib_corners_rejected.emplace(tcid, ccd_bad);
             }
           }
+
+          const size_t n = ++done;
+          if (n % 10 == 0 || n == total) {
+            const double elapsed =
+                std::chrono::duration<double>(
+                    std::chrono::steady_clock::now() - t_start)
+                    .count();
+            const double rate = elapsed > 0 ? n / elapsed : 0.0;
+            const double eta = rate > 0 ? (total - n) / rate : 0.0;
+            char el_buf[16];
+            char eta_buf[16];
+            fmt_hms(elapsed, el_buf, sizeof(el_buf));
+            fmt_hms(eta, eta_buf, sizeof(eta_buf));
+            std::fprintf(stderr,
+                         "\r  detecting corners: %zu/%zu (%.1f%%) "
+                         "[%s<%s, %.2fit/s]   ",
+                         n, total, 100.0 * static_cast<double>(n) / total,
+                         el_buf, eta_buf, rate);
+            std::fflush(stderr);
+          }
         }
       });
+  std::fprintf(stderr, "\n");
 }
 
 void CalibHelper::initCamPoses(

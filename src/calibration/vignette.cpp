@@ -37,6 +37,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <opencv2/imgcodecs.hpp>
 
+#include <iostream>
+
 namespace basalt {
 
 VignetteEstimator::VignetteEstimator(
@@ -239,11 +241,44 @@ void VignetteEstimator::opt_vign() {
 
 void VignetteEstimator::optimize() {
   compute_error();
-  for (int i = 0; i < 10; i++) {
+
+  auto compute_mean_abs_residual = [this]() {
+    double mean_residual = 0.0;
+    int num_residuals = 0;
+
+    for (const auto& kv : reprojected_vignette) {
+      const TimeCamId& tcid = kv.first;
+      const auto& points_2d_val = kv.second;
+
+      Eigen::Vector2d oc = optical_centers[tcid.cam_id];
+      BASALT_ASSERT(points_2d_val.size() ==
+                    april_grid.aprilgrid_vignette_pos_3d.size());
+
+      for (size_t p = 0; p < points_2d_val.size(); p++) {
+        if (points_2d_val[p][2] >= 0) {
+          const double val = points_2d_val[p][2];
+          const int64_t loc = (points_2d_val[p].head<2>() - oc).norm() * 1e9;
+          const double e =
+              irradiance[p] * vign_param[tcid.cam_id].evaluate(loc)[0] - val;
+          mean_residual += std::abs(e);
+          num_residuals++;
+        }
+      }
+    }
+
+    return num_residuals > 0 ? mean_residual / num_residuals : 0.0;
+  };
+
+  const int kNumIters = 10;
+  for (int i = 0; i < kNumIters; i++) {
     opt_irradience();
     compute_error();
     opt_vign();
     compute_error();
+
+    const double mean_residual = compute_mean_abs_residual();
+    std::cerr << "vign opt iter " << (i + 1) << "/" << kNumIters
+              << " mean_resid=" << mean_residual << std::endl;
   }
 }
 

@@ -47,6 +47,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <pangolin/display/default_font.h>
 
+#include <chrono>
+
 namespace basalt {
 
 CamCalib::CamCalib(const std::string& dataset_path,
@@ -151,10 +153,19 @@ void CamCalib::initGui() {
   pangolin::Var<std::function<void(void)>> compute_vign(
       "ui.compute_vign", std::bind(&CamCalib::computeVign, this));
 
+  pangolin::Var<std::function<void(void)>> quit_button(
+      "ui.quit", std::bind(&CamCalib::quitApp, this));
+
   setNumCameras(1);
 }
 
 void CamCalib::computeVign() {
+  const auto t_start = std::chrono::steady_clock::now();
+  const size_t num_frames = vio_dataset->get_image_timestamps().size();
+  const size_t num_cams = calib_opt->calib->intrinsics.size();
+  std::cout << "Started vignette computation (" << num_frames << " frames x "
+            << num_cams << " cams)..." << std::endl;
+
   Eigen::aligned_vector<Eigen::Vector2d> optical_centers;
   for (size_t i = 0; i < calib_opt->calib->intrinsics.size(); i++) {
     optical_centers.emplace_back(
@@ -232,6 +243,11 @@ void CamCalib::computeVign() {
 
   calib_opt->setVignette(ve.get_vign_param());
 
+  const double elapsed_s =
+      std::chrono::duration<double>(std::chrono::steady_clock::now() - t_start)
+          .count();
+  std::cout << "Done vignette computation in " << elapsed_s << " s"
+            << std::endl;
   std::cout << "Saved vignette png files to " << cache_path << std::endl;
 }
 
@@ -952,6 +968,10 @@ void CamCalib::saveCalib() {
     std::cout << "Saved calibration in " << cache_path << "calibration.json"
               << std::endl;
   }
+}
+
+void CamCalib::quitApp() {
+  pangolin::Quit();
 }
 
 void CamCalib::drawImageOverlay(pangolin::View& v, size_t cam_id) {

@@ -137,6 +137,9 @@ void CamImuCalib::initGui() {
   pangolin::Var<std::function<void(void)>> save_mocap_calib(
       "ui.save_mocap_calib", std::bind(&CamImuCalib::saveMocapCalib, this));
 
+  pangolin::Var<std::function<void(void)>> quit_button(
+      "ui.quit", std::bind(&CamImuCalib::quitApp, this));
+
   setNumCameras(1);
 }
 
@@ -808,6 +811,10 @@ void CamImuCalib::saveMocapCalib() {
     std::cout << "Saved Mocap calibration in " << cache_path
               << "mocap_calibration.json" << std::endl;
   }
+}
+
+void CamImuCalib::quitApp() {
+  pangolin::Quit();
 }
 
 void CamImuCalib::drawImageOverlay(pangolin::View& v, size_t cam_id) {

@@ -95,6 +95,8 @@ class CamImuCalib {
 
   void saveMocapCalib();
 
+  void quitApp();
+
   void drawImageOverlay(pangolin::View& v, size_t cam_id);
 
   void recomputeDataLog();
