@@ -24,6 +24,7 @@ endif()
 
 option(BASALT_BUILD_SHARED_LIB "Build basalt core library as shared" ON)
 option(BASALT_FULLY_STATIC_BINARIES "Link executables fully static" ON)
+option(BASALT_BUILD_PYTHON_BINDINGS "Build pybind11 Python bindings" OFF)
 
 if(NOT CXX_MARCH)
   set(CXX_MARCH native)
@@ -187,6 +188,12 @@ find_package(rosbag CONFIG REQUIRED)
 find_package(Pangolin CONFIG REQUIRED)
 find_package(basalt-headers CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
+
+if(BASALT_BUILD_PYTHON_BINDINGS)
+  set(PYBIND11_FINDPYTHON ON)
+  find_package(pybind11 CONFIG REQUIRED)
+  message(STATUS "Python bindings: ${Python3_EXECUTABLE} (${Python3_VERSION})")
+endif()
 
 get_target_property(BASALT_EIGEN_INCLUDE_DIRS Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
 if(NOT BASALT_EIGEN_INCLUDE_DIRS)
@@ -355,6 +362,15 @@ target_include_directories(basalt PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/ros/include)
 target_compile_definitions(basalt PUBLIC ${BASALT_COMPILE_DEFINITIONS})
 #target_compile_definitions(basalt PUBLIC BASALT_DISABLE_ASSERTS)
+
+if(BASALT_BUILD_PYTHON_BINDINGS)
+  pybind11_add_module(basalt_pybind src/python/basalt_pybind.cpp)
+  target_link_libraries(basalt_pybind PRIVATE basalt opengv)
+  target_compile_definitions(basalt_pybind PRIVATE ${BASALT_COMPILE_DEFINITIONS})
+  set_target_properties(basalt_pybind PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/python
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/python)
+endif()
 
 add_executable(basalt_calibrate src/calibrate.cpp src/calibration/cam_calib.cpp)
 target_link_libraries(basalt_calibrate basalt ${BASALT_PANGO_TARGETS} basalt::cli11)

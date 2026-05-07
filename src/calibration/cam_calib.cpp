@@ -56,7 +56,8 @@ CamCalib::CamCalib(const std::string& dataset_path,
                    const std::string& aprilgrid_path,
                    const std::string& cache_path,
                    const std::string& cache_dataset_name, int skip_images,
-                   const std::vector<std::string>& cam_types, bool show_gui)
+                   const std::vector<std::string>& cam_types, bool show_gui,
+                   bool compute_vignette)
     : dataset_path(dataset_path),
       dataset_type(dataset_type),
       april_grid(aprilgrid_path),
@@ -65,6 +66,7 @@ CamCalib::CamCalib(const std::string& dataset_path,
       skip_images(skip_images),
       cam_types(cam_types),
       show_gui(show_gui),
+      compute_vignette(compute_vignette),
       show_frame("ui.show_frame", 0, 0, 1500),
       show_corners("ui.show_corners", true, true),
       show_corners_rejected("ui.show_corners_rejected", false, true),
@@ -160,6 +162,12 @@ void CamCalib::initGui() {
 }
 
 void CamCalib::computeVign() {
+  if (!compute_vignette) {
+    std::cout << "Skipping vignette computation (--no-vignette flag)"
+              << std::endl;
+    return;
+  }
+
   const auto t_start = std::chrono::steady_clock::now();
   const size_t num_frames = vio_dataset->get_image_timestamps().size();
   const size_t num_cams = calib_opt->calib->intrinsics.size();
@@ -430,6 +438,14 @@ void CamCalib::detectCorners() {
   if (processing_thread) {
     processing_thread->join();
     processing_thread.reset();
+  }
+
+  // Skip detection if corners already loaded from cache
+  if (!calib_corners.empty()) {
+    std::cout << "[REUSE] Preexisting corner detection found in cache ("
+              << calib_corners.size()
+              << " detections); skipping corner detection." << std::endl;
+    return;
   }
 
   processing_thread.reset(new std::thread([this]() {
@@ -970,9 +986,7 @@ void CamCalib::saveCalib() {
   }
 }
 
-void CamCalib::quitApp() {
-  pangolin::Quit();
-}
+void CamCalib::quitApp() { pangolin::Quit(); }
 
 void CamCalib::drawImageOverlay(pangolin::View& v, size_t cam_id) {
   UNUSED(v);

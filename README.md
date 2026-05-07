@@ -50,6 +50,43 @@ sudo apt install build-essential ninja-build libglu1-mesa-dev libudev-dev \
 `nasm` is required so vcpkg can build FFmpeg (used by OpenCV's `videoio` for MP4
 ingestion).
 
+For optional Python bindings (`-DBASALT_BUILD_PYTHON_BINDINGS=ON`), Basalt uses pybind11
+with Python 3.12. Create a dedicated Python 3.12 virtual environment and install dependencies:
+
+**Step 1: Install Python 3.12 (Ubuntu 22.04)**
+```bash
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install python3.12 python3.12-venv python3.12-dev
+```
+
+**Step 2: Create and activate the venv**
+```bash
+python3.12 -m venv ~/.venv/basalt
+source ~/.venv/basalt/bin/activate
+```
+
+**Step 3: Install Python test requirements**
+```bash
+pip install -r requirements-bindings.txt
+```
+
+**Step 4: Build with bindings enabled**
+```bash
+source ~/.venv/basalt/bin/activate
+cmake --preset relwithdebinfo -DBASALT_BUILD_PYTHON_BINDINGS=ON
+cmake --build --preset relwithdebinfo -j8
+ctest --preset relwithdebinfo
+```
+
+**To use the Python bindings in your own code:**
+```bash
+source ~/.venv/basalt/bin/activate
+export PYTHONPATH=/path/to/basalt/build/relwithdebinfo/python:$PYTHONPATH
+python your_script.py
+```
+
+
 ```
 git clone --recursive https://gitlab.com/VladyslavUsenko/basalt.git
 cd basalt

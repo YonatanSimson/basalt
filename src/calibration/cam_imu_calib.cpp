@@ -243,6 +243,13 @@ void CamImuCalib::detectCorners() {
     processing_thread.reset();
   }
 
+  // Skip detection if corners already loaded from cache
+  if (!calib_corners.empty()) {
+    std::cout << "[REUSE] Preexisting corner detection found in cache (" 
+              << calib_corners.size() << " detections); skipping corner detection." << std::endl;
+    return;
+  }
+
   processing_thread.reset(new std::thread([this]() {
     std::cout << "Started detecting corners" << std::endl;
 
