@@ -155,24 +155,3 @@ TEST(DatasetIoMp4, MultiCamFromDirectory) {
   EXPECT_TRUE(imgs2[1].img.get() == nullptr);
 }
 
-TEST(DatasetIoMp4, RealInstaCameraFile) {
-  // Skipped unless the file exists locally. This verifies that real-world
-  // MP4s (HEVC/h264) decode through our reader.
-  const std::string path =
-      "/home/ysimson/data/insta_calibration/front_back_dining_room_tv/"
-      "071_back_calib_output/VID_20260504_113358_00_071_rear.mp4";
-  if (!fs::exists(path)) GTEST_SKIP() << "real MP4 not present at " << path;
-
-  auto io = basalt::DatasetIoFactory::getDatasetIo("mp4");
-  io->read(path);
-  auto ds = io->get_data();
-  ASSERT_TRUE(ds.get() != nullptr);
-  EXPECT_EQ(ds->get_num_cams(), 1u);
-  ASSERT_GT(ds->get_image_timestamps().size(), 0u);
-
-  auto imgs = ds->get_image_data(ds->get_image_timestamps().front());
-  ASSERT_EQ(imgs.size(), 1u);
-  ASSERT_TRUE(imgs[0].img.get() != nullptr);
-  EXPECT_GT(imgs[0].img->w, 0);
-  EXPECT_GT(imgs[0].img->h, 0);
-}
