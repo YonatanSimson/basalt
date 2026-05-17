@@ -366,7 +366,23 @@ void CamCalib::computeProjections() {
           size_t id = it->second.corner_ids[k];
 
           if (rc.corners_proj_success[id]) {
-            double error = (it->second.corners[k] - rc.corners_proj[id]).norm();
+            Eigen::Vector2d diff =
+                it->second.corners[k] - rc.corners_proj[id];
+
+            // Equirectangular: u wraps with period W = 2π·fx. Without this,
+            // corners straddling the lon=±π seam show as huge spikes in
+            // the polar/azimuth histogram and mask real reprojection issues.
+            if (calib_opt->calib->intrinsics[i].getName() == "equi") {
+              const double W =
+                  calib_opt->calib->intrinsics[i].getParam()[0] * 2.0 * M_PI;
+              const double half_W = 0.5 * W;
+              if (diff[0] > half_W)
+                diff[0] -= W;
+              else if (diff[0] < -half_W)
+                diff[0] += W;
+            }
+
+            double error = diff.norm();
 
             size_t polar_bin =
                 180 * polar_azimuthal_angle[id][0] / (M_PI * ANGLE_BIN_SIZE);

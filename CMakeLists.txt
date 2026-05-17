@@ -329,7 +329,7 @@ target_sources(basalt
     ${CMAKE_CURRENT_SOURCE_DIR}/include/basalt/vi_estimator/vio_estimator.h
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/calibration/aprilgrid.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/calibration/calibraiton_helper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/calibration/calibration_helper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/calibration/vignette.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/dataset_io.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/marg_data_io.cpp

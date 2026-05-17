@@ -40,7 +40,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <basalt/calibration/calibration.hpp>
 #include <basalt/camera/stereographic_param.hpp>
 
+#include <type_traits>
+
 namespace basalt {
+
+// Camera models with a longitude branch cut (e.g. equirectangular) set
+// `static constexpr bool kAzimuthalWrap = true`. We detect that with SFINAE
+// so models that don't define it stay false by default — no changes needed
+// in pinhole/double-sphere/etc. headers.
+template <class T, class = void>
+struct camera_has_azimuthal_wrap : std::false_type {};
+
+template <class T>
+struct camera_has_azimuthal_wrap<T, std::void_t<decltype(T::kAzimuthalWrap)>>
+    : std::integral_constant<bool, T::kAzimuthalWrap> {};
 
 template <typename Scalar>
 struct LinearizeBase {
@@ -156,6 +169,21 @@ struct LinearizeBase {
     if (!valid || !proj.array().isFinite().all()) return;
 
     Eigen::Vector2d residual = proj - corner_pos;
+
+    if constexpr (camera_has_azimuthal_wrap<CamT>::value) {
+      // u wraps with period W = 2π·fx; pick the branch with |Δu| ≤ W/2 so
+      // a corner detected at u≈W-1 and predicted at u≈1 doesn't generate a
+      // ~W-pixel residual pointing the long way around the sphere. The
+      // wrap is a piecewise-constant offset, so d_r_d_p / d_r_d_param /
+      // d_r_d_xi are unchanged.
+      const double W =
+          static_cast<double>(cam.getParam()[0]) * 2.0 * M_PI;
+      const double half_W = 0.5 * W;
+      if (residual[0] > half_W)
+        residual[0] -= W;
+      else if (residual[0] < -half_W)
+        residual[0] += W;
+    }
 
     double e = residual.norm();
     double huber_weight =
