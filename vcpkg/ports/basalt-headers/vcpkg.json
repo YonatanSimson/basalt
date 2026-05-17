@@ -1,7 +1,7 @@
 {
   "name": "basalt-headers",
-  "version-string": "0.1.0",
-  "description": "Basalt reusable header-only components",
+  "version-string": "0.1.0-equirect2",
+  "description": "Basalt reusable header-only components (local fork: adds EquirectangularCamera)",
   "dependencies": [
     "cereal",
     "eigen3",

@@ -1,8 +1,18 @@
-vcpkg_from_git(
-    OUT_SOURCE_PATH SOURCE_PATH
-    URL https://gitlab.com/VladyslavUsenko/basalt-headers.git
-    REF aa441ba3e51050c47ba1902537792a2e4db7e43d
-)
+# Local fork of basalt-headers (with EquirectangularCamera support),
+# pulled in as a git submodule at thirdparty/basalt-headers-src/.
+# Source: github.com/YonatanSimson/basalt-headers (fork of
+# gitlab.com/VladyslavUsenko/basalt-headers).
+
+set(SOURCE_PATH "${CURRENT_PORT_DIR}/../../../thirdparty/basalt-headers-src")
+
+if(NOT EXISTS "${SOURCE_PATH}/CMakeLists.txt")
+    message(FATAL_ERROR
+        "basalt-headers submodule is empty at: ${SOURCE_PATH}\n"
+        "Initialize it with:\n"
+        "  git -C ${CURRENT_PORT_DIR}/../../.. submodule update --init "
+        "thirdparty/basalt-headers-src"
+    )
+endif()
 
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"

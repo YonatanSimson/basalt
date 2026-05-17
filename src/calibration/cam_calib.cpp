@@ -493,6 +493,26 @@ void CamCalib::initCamIntrinsics() {
   if (vio_dataset->get_image_timestamps().size() > 100) inc = 3;
 
   for (size_t j = 0; j < vio_dataset->get_num_cams(); j++) {
+    // Equirectangular: intrinsics are frozen and fully determined by W,H —
+    // skip the corner-fitting path (it would fail; equi has no learnable
+    // intrinsics to recover from corners) and set the variant directly.
+    if (calib_opt->calib->intrinsics[j].getName() == "equi") {
+      for (size_t i = 0; i < vio_dataset->get_image_timestamps().size();
+           i += inc) {
+        const int64_t timestamp_ns = vio_dataset->get_image_timestamps()[i];
+        const std::vector<basalt::ImageData>& img_vec =
+            vio_dataset->get_image_data(timestamp_ns);
+        if (img_vec[j].img.get()) {
+          calib_opt->calib->intrinsics[j].variant =
+              EquirectangularCamera<double>::fromResolution(
+                  img_vec[j].img->w, img_vec[j].img->h);
+          cam_initialized[j] = true;
+          break;
+        }
+      }
+      continue;
+    }
+
     for (size_t i = 0; i < vio_dataset->get_image_timestamps().size();
          i += inc) {
       const int64_t timestamp_ns = vio_dataset->get_image_timestamps()[i];

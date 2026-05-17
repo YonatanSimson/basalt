@@ -43,6 +43,16 @@ Camera make_camera(
     target[i] = p(i);
   }
 
+  // Equirect intrinsics are frozen: operator+= is a no-op so applyInc(...)
+  // can't move the params off zero. Construct the variant directly from the
+  // requested [fx, fy, cx, cy] instead.
+  if (cam.getName() == "equi") {
+    Eigen::Matrix<double, 4, 1> equi_p;
+    equi_p << target[0], target[1], target[2], target[3];
+    cam.variant = basalt::EquirectangularCamera<double>(equi_p);
+    return cam;
+  }
+
   cam.applyInc(target - cur);
   return cam;
 }

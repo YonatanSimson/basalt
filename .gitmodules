@@ -1,3 +1,6 @@
 [submodule "thirdparty/vcpkg"]
 	path = thirdparty/vcpkg
 	url = https://github.com/microsoft/vcpkg.git
+[submodule "thirdparty/basalt-headers-src"]
+	path = thirdparty/basalt-headers-src
+	url = git@github.com:YonatanSimson/basalt-headers.git
