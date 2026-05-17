@@ -105,6 +105,51 @@ class PosesOptimization {
 
       archive(*calib);
     }
+
+    saveOptPoses(path + "calib-cam_opt_poses.json");
+  }
+
+  // Dump optimized per-frame world->IMU poses + IMU->cam extrinsics as plain
+  // JSON. Format:
+  //   {"cam_ids":[0,...],
+  //    "T_i_c":[ [16 row-major floats], ... ],
+  //    "T_w_i":{"<t_ns>":[16 row-major floats], ...}}
+  void saveOptPoses(const std::string& full_path) const {
+    if (!calib) return;
+    std::ofstream os(full_path);
+    if (!os) return;
+    os.precision(17);
+
+    auto dump_mat = [&os](const Eigen::Matrix<double, 4, 4>& m) {
+      os << "[";
+      for (int r = 0; r < 4; ++r) {
+        for (int c = 0; c < 4; ++c) {
+          os << m(r, c);
+          if (!(r == 3 && c == 3)) os << ",";
+        }
+      }
+      os << "]";
+    };
+
+    os << "{\n  \"cam_ids\":[";
+    for (size_t i = 0; i < calib->T_i_c.size(); ++i) {
+      os << i << (i + 1 == calib->T_i_c.size() ? "" : ",");
+    }
+    os << "],\n  \"T_i_c\":[";
+    for (size_t i = 0; i < calib->T_i_c.size(); ++i) {
+      if (i) os << ",";
+      os << "\n    ";
+      dump_mat(calib->T_i_c[i].matrix());
+    }
+    os << "\n  ],\n  \"T_w_i\":{";
+    bool first = true;
+    for (const auto& kv : timestam_to_pose) {
+      if (!first) os << ",";
+      first = false;
+      os << "\n    \"" << kv.first << "\":";
+      dump_mat(kv.second.matrix());
+    }
+    os << "\n  }\n}\n";
   }
 
   bool calibInitialized() const { return calib != nullptr; }
