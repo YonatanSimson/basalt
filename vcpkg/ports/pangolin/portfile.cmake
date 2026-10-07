@@ -34,6 +34,9 @@ file(REMOVE "${SOURCE_PATH}/CMakeModules/FindGLEW.cmake")
 file(REMOVE "${SOURCE_PATH}/CMakeModules/FindFFMPEG.cmake")
 file(REMOVE_RECURSE "${SOURCE_PATH}/components/pango_core/include/sigslot")
 
+# Newer compilers (e.g. Apple clang 21) add warnings that upstream code trips under -Werror
+vcpkg_replace_string("${SOURCE_PATH}/CMakeLists.txt" "add_compile_options(-Wall -Wextra -Werror)" "add_compile_options(-Wall -Wextra)")
+
 string(COMPARE EQUAL "${VCPKG_CRT_LINKAGE}" "static" MSVC_USE_STATIC_CRT)
 
 vcpkg_cmake_configure(
