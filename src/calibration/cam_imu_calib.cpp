@@ -245,8 +245,9 @@ void CamImuCalib::detectCorners() {
 
   // Skip detection if corners already loaded from cache
   if (!calib_corners.empty()) {
-    std::cout << "[REUSE] Preexisting corner detection found in cache (" 
-              << calib_corners.size() << " detections); skipping corner detection." << std::endl;
+    std::cout << "[REUSE] Preexisting corner detection found in cache ("
+              << calib_corners.size()
+              << " detections); skipping corner detection." << std::endl;
     return;
   }
 
@@ -820,9 +821,7 @@ void CamImuCalib::saveMocapCalib() {
   }
 }
 
-void CamImuCalib::quitApp() {
-  pangolin::Quit();
-}
+void CamImuCalib::quitApp() { pangolin::Quit(); }
 
 void CamImuCalib::drawImageOverlay(pangolin::View& v, size_t cam_id) {
   UNUSED(v);

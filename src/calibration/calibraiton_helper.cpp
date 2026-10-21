@@ -164,8 +164,8 @@ void CalibHelper::detectCorners(const VioDatasetPtr& vio_data,
           const size_t n = ++done;
           if (n % 10 == 0 || n == total) {
             const double elapsed =
-                std::chrono::duration<double>(
-                    std::chrono::steady_clock::now() - t_start)
+                std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                              t_start)
                     .count();
             const double rate = elapsed > 0 ? n / elapsed : 0.0;
             const double eta = rate > 0 ? (total - n) / rate : 0.0;

@@ -32,8 +32,8 @@ bool write_synthetic_mp4(const std::string& path, int width, int height,
     cv::Mat frame(height, width, CV_8UC3, cv::Scalar(20, 20, 20));
     const int x = (k * 5) % (width - 16);
     const int y = (k * 3) % (height - 16);
-    cv::rectangle(frame, cv::Rect(x, y, 16, 16),
-                  cv::Scalar(255, 255, 255), cv::FILLED);
+    cv::rectangle(frame, cv::Rect(x, y, 16, 16), cv::Scalar(255, 255, 255),
+                  cv::FILLED);
     writer.write(frame);
   }
   writer.release();

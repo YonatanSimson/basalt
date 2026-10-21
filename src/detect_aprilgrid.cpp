@@ -6,8 +6,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include <basalt/utils/apriltag.h>
 #include <basalt/image/image.h>
+#include <basalt/utils/apriltag.h>
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -42,10 +42,11 @@ int main(int argc, char** argv) {
   std::vector<int> ids, ids_rejected;
   std::vector<double> radii, radii_rejected;
 
-  detector.detectTags(img_basalt, corners, ids, radii,
-                      corners_rejected, ids_rejected, radii_rejected);
+  detector.detectTags(img_basalt, corners, ids, radii, corners_rejected,
+                      ids_rejected, radii_rejected);
 
-  std::cout << "Image: " << img_path << " (" << gray.cols << "x" << gray.rows << ")\n";
+  std::cout << "Image: " << img_path << " (" << gray.cols << "x" << gray.rows
+            << ")\n";
   std::cout << "Detected: " << ids.size() / 4 << " tags (" << ids.size()
             << " corners)\n";
   std::cout << "Rejected: " << ids_rejected.size() / 4 << " tags\n\n";
@@ -76,7 +77,8 @@ int main(int argc, char** argv) {
                 cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 220, 0), 1);
   }
 
-  std::string out_path = img_path.substr(0, img_path.rfind('.')) + "_basalt_detection.jpg";
+  std::string out_path =
+      img_path.substr(0, img_path.rfind('.')) + "_basalt_detection.jpg";
   cv::imwrite(out_path, out);
   std::cout << "Annotated image -> " << out_path << "\n";
 

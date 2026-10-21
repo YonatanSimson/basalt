@@ -125,8 +125,7 @@ class Mp4VioDataset : public VioDataset {
 
       // Sequential next-frame is the fast path. Otherwise seek.
       if (last_frame_idx[i] < 0 || want_idx != last_frame_idx[i] + 1) {
-        if (!cap.set(cv::CAP_PROP_POS_FRAMES,
-                     static_cast<double>(want_idx))) {
+        if (!cap.set(cv::CAP_PROP_POS_FRAMES, static_cast<double>(want_idx))) {
           last_frame_idx[i] = -1;
           continue;
         }
@@ -160,8 +159,7 @@ class Mp4VioDataset : public VioDataset {
           out[k] = static_cast<uint16_t>(in[k]) << 8;
         }
       } else if (gray.depth() == CV_16U) {
-        std::memcpy(res[i].img->ptr, gray.ptr(),
-                    full_size * sizeof(uint16_t));
+        std::memcpy(res[i].img->ptr, gray.ptr(), full_size * sizeof(uint16_t));
       } else {
         cv::Mat conv;
         gray.convertTo(conv, CV_8U);
@@ -226,12 +224,12 @@ class Mp4IO : public DatasetIoInterface {
       }
       double f = cap.get(cv::CAP_PROP_FPS);
       if (!(f > 0.0)) {
-        std::cerr << "Could not read FPS from " << videos[i]
-                  << " (got " << f << ")" << std::endl;
+        std::cerr << "Could not read FPS from " << videos[i] << " (got " << f
+                  << ")" << std::endl;
         std::abort();
       }
-      const int64_t n = static_cast<int64_t>(
-          std::llround(cap.get(cv::CAP_PROP_FRAME_COUNT)));
+      const int64_t n =
+          static_cast<int64_t>(std::llround(cap.get(cv::CAP_PROP_FRAME_COUNT)));
       if (n <= 0) {
         std::cerr << "Could not read frame count from " << videos[i]
                   << std::endl;
