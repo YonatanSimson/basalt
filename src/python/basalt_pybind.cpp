@@ -1,4 +1,6 @@
 #include <basalt/camera/generic_camera.hpp>
+#include <basalt/image/image.h>
+#include <basalt/utils/apriltag.h>
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -12,6 +14,7 @@
 #include <pybind11/stl.h>
 
 #include <cmath>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 
@@ -214,6 +217,64 @@ py::dict estimate_pose_ransac(
   return out;
 }
 
+py::array_t<double> corners_array(
+    const Eigen::aligned_vector<Eigen::Vector2d>& corners) {
+  const auto n = static_cast<py::ssize_t>(corners.size());
+  py::array_t<double> out(std::vector<py::ssize_t>{n, 2});
+  auto out_m = out.mutable_unchecked<2>();
+  for (py::ssize_t i = 0; i < n; ++i) {
+    out_m(i, 0) = corners[i][0];
+    out_m(i, 1) = corners[i][1];
+  }
+  return out;
+}
+
+py::dict detect_aprilgrid(const py::array& image, int num_tags) {
+  if (image.ndim() != 2) {
+    throw std::invalid_argument("image must be a 2D grayscale array (H,W)");
+  }
+  const auto h = image.shape(0);
+  const auto w = image.shape(1);
+
+  // Same input as basalt_calibrate: 16-bit, 8-bit images scaled by 256.
+  basalt::ManagedImage<uint16_t> img(w, h);
+  if (py::isinstance<py::array_t<uint8_t>>(image)) {
+    auto px = py::array_t<uint8_t, py::array::c_style | py::array::forcecast>(
+                  image)
+                  .unchecked<2>();
+    for (py::ssize_t r = 0; r < h; ++r)
+      for (py::ssize_t c = 0; c < w; ++c)
+        img(c, r) = static_cast<uint16_t>(px(r, c)) << 8;
+  } else if (py::isinstance<py::array_t<uint16_t>>(image)) {
+    auto px = py::array_t<uint16_t, py::array::c_style | py::array::forcecast>(
+                  image)
+                  .unchecked<2>();
+    for (py::ssize_t r = 0; r < h; ++r)
+      for (py::ssize_t c = 0; c < w; ++c) img(c, r) = px(r, c);
+  } else {
+    throw std::invalid_argument("image dtype must be uint8 or uint16");
+  }
+
+  Eigen::aligned_vector<Eigen::Vector2d> corners, corners_rejected;
+  std::vector<int> ids, ids_rejected;
+  std::vector<double> radii, radii_rejected;
+  {
+    py::gil_scoped_release release;
+    basalt::ApriltagDetector detector(num_tags);
+    detector.detectTags(img, corners, ids, radii, corners_rejected,
+                        ids_rejected, radii_rejected);
+  }
+
+  py::dict out;
+  out["corners"] = corners_array(corners);
+  out["corner_ids"] = py::array_t<int>(ids.size(), ids.data());
+  out["radii"] = py::array_t<double>(radii.size(), radii.data());
+  out["corners_rejected"] = corners_array(corners_rejected);
+  out["corner_ids_rejected"] =
+      py::array_t<int>(ids_rejected.size(), ids_rejected.data());
+  return out;
+}
+
 }  // namespace
 
 PYBIND11_MODULE(basalt, m) {
@@ -227,6 +288,12 @@ PYBIND11_MODULE(basalt, m) {
   m.def("unproject_points", &unproject_points, py::arg("model"),
         py::arg("params"), py::arg("pixels"),
         "Unproject pixels (N,2) into unit rays. Returns (rays, valid).");
+
+  m.def("detect_aprilgrid", &detect_aprilgrid, py::arg("image"),
+        py::arg("num_tags") = 36,
+        "Detect AprilGrid tag corners with Basalt's calibration frontend. "
+        "image: (H,W) uint8 or uint16. Returns dict with corners (N,2), "
+        "corner_ids (N,) = tag_id*4 + corner, radii, and the rejected ones.");
 
   m.def("estimate_pose_ransac", &estimate_pose_ransac, py::arg("model"),
         py::arg("params"), py::arg("points3d"), py::arg("pixels"),

@@ -365,7 +365,7 @@ target_compile_definitions(basalt PUBLIC ${BASALT_COMPILE_DEFINITIONS})
 
 if(BASALT_BUILD_PYTHON_BINDINGS)
   pybind11_add_module(basalt_pybind src/python/basalt_pybind.cpp)
-  target_link_libraries(basalt_pybind PRIVATE basalt opengv)
+  target_link_libraries(basalt_pybind PRIVATE basalt opengv apriltag)
   target_compile_definitions(basalt_pybind PRIVATE ${BASALT_COMPILE_DEFINITIONS})
   set_target_properties(basalt_pybind PROPERTIES
     OUTPUT_NAME basalt
