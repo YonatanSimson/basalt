@@ -1,6 +1,5 @@
-#include <basalt/camera/generic_camera.hpp>
-#include <basalt/image/image.h>
 #include <basalt/utils/apriltag.h>
+#include <basalt/camera/generic_camera.hpp>
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -8,6 +7,8 @@
 #include <opengv/absolute_pose/CentralAbsoluteAdapter.hpp>
 #include <opengv/sac/Ransac.hpp>
 #include <opengv/sac_problems/absolute_pose/AbsolutePoseSacProblem.hpp>
+
+#include <opencv2/core/mat.hpp>
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -229,28 +230,37 @@ py::array_t<double> corners_array(
   return out;
 }
 
+// Copies a 2D array of T into the 8-bit image the detector works on, shifting
+// each pixel right by `shift` bits.
+template <typename T>
+cv::Mat to_image8(const py::array& image, int shift) {
+  auto px = py::array_t<T, py::array::c_style | py::array::forcecast>(image)
+                .template unchecked<2>();
+  cv::Mat out(static_cast<int>(px.shape(0)), static_cast<int>(px.shape(1)),
+              CV_8U);
+  for (py::ssize_t r = 0; r < px.shape(0); ++r)
+    for (py::ssize_t c = 0; c < px.shape(1); ++c)
+      out.at<uint8_t>(r, c) = static_cast<uint8_t>(px(r, c) >> shift);
+  return out;
+}
+
 py::dict detect_aprilgrid(const py::array& image, int num_tags) {
   if (image.ndim() != 2) {
     throw std::invalid_argument("image must be a 2D grayscale array (H,W)");
   }
-  const auto h = image.shape(0);
-  const auto w = image.shape(1);
+  if (image.shape(0) == 0 || image.shape(1) == 0) {
+    throw std::invalid_argument("image must have non-zero height and width");
+  }
+  if (num_tags <= 0) {
+    throw std::invalid_argument("num_tags must be positive");
+  }
 
-  // Same input as basalt_calibrate: 16-bit, 8-bit images scaled by 256.
-  basalt::ManagedImage<uint16_t> img(w, h);
+  // Same as basalt_calibrate: the detector keeps the top 8 bits of uint16.
+  cv::Mat img;
   if (py::isinstance<py::array_t<uint8_t>>(image)) {
-    auto px = py::array_t<uint8_t, py::array::c_style | py::array::forcecast>(
-                  image)
-                  .unchecked<2>();
-    for (py::ssize_t r = 0; r < h; ++r)
-      for (py::ssize_t c = 0; c < w; ++c)
-        img(c, r) = static_cast<uint16_t>(px(r, c)) << 8;
+    img = to_image8<uint8_t>(image, 0);
   } else if (py::isinstance<py::array_t<uint16_t>>(image)) {
-    auto px = py::array_t<uint16_t, py::array::c_style | py::array::forcecast>(
-                  image)
-                  .unchecked<2>();
-    for (py::ssize_t r = 0; r < h; ++r)
-      for (py::ssize_t c = 0; c < w; ++c) img(c, r) = px(r, c);
+    img = to_image8<uint16_t>(image, 8);
   } else {
     throw std::invalid_argument("image dtype must be uint8 or uint16");
   }
@@ -272,6 +282,8 @@ py::dict detect_aprilgrid(const py::array& image, int num_tags) {
   out["corners_rejected"] = corners_array(corners_rejected);
   out["corner_ids_rejected"] =
       py::array_t<int>(ids_rejected.size(), ids_rejected.data());
+  out["radii_rejected"] =
+      py::array_t<double>(radii_rejected.size(), radii_rejected.data());
   return out;
 }
 
@@ -292,8 +304,11 @@ PYBIND11_MODULE(basalt, m) {
   m.def("detect_aprilgrid", &detect_aprilgrid, py::arg("image"),
         py::arg("num_tags") = 36,
         "Detect AprilGrid tag corners with Basalt's calibration frontend. "
-        "image: (H,W) uint8 or uint16. Returns dict with corners (N,2), "
-        "corner_ids (N,) = tag_id*4 + corner, radii, and the rejected ones.");
+        "image: (H,W) uint8 or uint16; uint16 must span the full 16-bit "
+        "range (scale 10/12-bit data up first). num_tags: total tags on the "
+        "board; tags with higher ids are dropped. Returns dict with corners "
+        "(N,2), corner_ids (N,) = tag_id*4 + corner, radii, and the "
+        "*_rejected counterparts.");
 
   m.def("estimate_pose_ransac", &estimate_pose_ransac, py::arg("model"),
         py::arg("params"), py::arg("points3d"), py::arg("pixels"),

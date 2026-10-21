@@ -1,5 +1,6 @@
 import math
 
+import cv2
 import numpy as np
 import pytest
 
@@ -84,7 +85,6 @@ def _render_aprilgrid(tag_px: int, rows: int, cols: int) -> tuple[np.ndarray, di
 
     Returns the image and, per tag id, its 4 outer corners in Basalt's corner order k.
     """
-    cv2 = pytest.importorskip("cv2")
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
     cell = tag_px // 10
     sq = int(round(0.3 * tag_px))
@@ -119,6 +119,8 @@ def test_detect_aprilgrid_finds_every_tag_at_its_corners() -> None:
         assert ids.size == 48 and set((ids // 4).tolist()) == set(truth)
         err = [np.linalg.norm(truth[i // 4][i % 4] - p) for i, p in zip(ids, uv)]
         assert max(err) < 0.05
+        assert len(det["radii"]) == ids.size
+        assert len(det["radii_rejected"]) == len(det["corner_ids_rejected"])
 
 
 def test_detect_aprilgrid_rejects_bad_input() -> None:
@@ -126,3 +128,15 @@ def test_detect_aprilgrid_rejects_bad_input() -> None:
         basalt.detect_aprilgrid(np.zeros((4, 4, 3), dtype=np.uint8))
     with pytest.raises(ValueError):
         basalt.detect_aprilgrid(np.zeros((4, 4), dtype=np.float32))
+
+
+@pytest.mark.parametrize("shape", [(0, 10), (10, 0), (0, 0)])
+def test_detect_aprilgrid_rejects_empty_image(shape: tuple[int, int]) -> None:
+    with pytest.raises(ValueError):
+        basalt.detect_aprilgrid(np.zeros(shape, dtype=np.uint8))
+
+
+@pytest.mark.parametrize("num_tags", [0, -5])
+def test_detect_aprilgrid_rejects_non_positive_num_tags(num_tags: int) -> None:
+    with pytest.raises(ValueError):
+        basalt.detect_aprilgrid(np.zeros((10, 10), dtype=np.uint8), num_tags=num_tags)

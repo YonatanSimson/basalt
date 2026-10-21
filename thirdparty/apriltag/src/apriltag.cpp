@@ -48,13 +48,6 @@ void ApriltagDetector::detectTags(
     std::vector<double>& radii,
     Eigen::aligned_vector<Eigen::Vector2d>& corners_rejected,
     std::vector<int>& ids_rejected, std::vector<double>& radii_rejected) {
-  corners.clear();
-  ids.clear();
-  radii.clear();
-  corners_rejected.clear();
-  ids_rejected.clear();
-  radii_rejected.clear();
-
   cv::Mat image(img_raw.h, img_raw.w, CV_8U);
 
   uint8_t* dst = image.ptr();
@@ -63,6 +56,22 @@ void ApriltagDetector::detectTags(
   for (size_t i = 0; i < img_raw.size(); i++) {
     dst[i] = (src[i] >> 8);
   }
+
+  detectTags(image, corners, ids, radii, corners_rejected, ids_rejected,
+             radii_rejected);
+}
+
+void ApriltagDetector::detectTags(
+    const cv::Mat& image, Eigen::aligned_vector<Eigen::Vector2d>& corners,
+    std::vector<int>& ids, std::vector<double>& radii,
+    Eigen::aligned_vector<Eigen::Vector2d>& corners_rejected,
+    std::vector<int>& ids_rejected, std::vector<double>& radii_rejected) {
+  corners.clear();
+  ids.clear();
+  radii.clear();
+  corners_rejected.clear();
+  ids_rejected.clear();
+  radii_rejected.clear();
 
   // detect the tags
   std::vector<AprilTags::TagDetection> detections =

@@ -1,6 +1,7 @@
 
 #include <basalt/image/image.h>
 #include <basalt/utils/sophus_utils.hpp>
+#include <opencv2/core/mat.hpp>
 #include <vector>
 
 namespace basalt {
@@ -14,6 +15,14 @@ class ApriltagDetector {
   ~ApriltagDetector();
 
   void detectTags(basalt::ManagedImage<uint16_t>& img_raw,
+                  Eigen::aligned_vector<Eigen::Vector2d>& corners,
+                  std::vector<int>& ids, std::vector<double>& radii,
+                  Eigen::aligned_vector<Eigen::Vector2d>& corners_rejected,
+                  std::vector<int>& ids_rejected,
+                  std::vector<double>& radii_rejected);
+
+  // Same as above for an 8-bit (CV_8U) grayscale image.
+  void detectTags(const cv::Mat& image,
                   Eigen::aligned_vector<Eigen::Vector2d>& corners,
                   std::vector<int>& ids, std::vector<double>& radii,
                   Eigen::aligned_vector<Eigen::Vector2d>& corners_rejected,
